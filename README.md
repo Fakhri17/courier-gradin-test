@@ -1,6 +1,6 @@
 # Courier Master Data API (Gradin Coding Test)
 
-Backend RESTful API untuk manajemen master data Kurir/Courier. Dibangun menggunakan **Laravel 13** dengan **PHP 8.3+**. Sesuai instruksi teknis, proyek ini murni API (tanpa frontend UI) dan merespons seluruh permintaan dalam format JSON.
+Backend RESTful API untuk manajemen master data Kurir/Courier. Dibangun menggunakan **Laravel 13** dengan **PHP 8.3+**. Proyek ini murni API (tanpa frontend UI) dan merespons seluruh permintaan dalam format JSON.
 
 ---
 
@@ -15,7 +15,7 @@ Backend RESTful API untuk manajemen master data Kurir/Courier. Dibangun mengguna
 ## 2. Cara Menjalankan Project
 
 1. **Aktifkan Servis MySQL**:
-   Pastikan servis MySQL pada Laragon atau XAMPP sudah berjalan.
+   Pastikan MySQL pada Laragon atau XAMPP sudah berjalan.
 
 2. **Buat Database**:
    Buat database baru di MySQL (misalnya melalui HeidiSQL, phpMyAdmin, atau MySQL CLI):
@@ -24,6 +24,7 @@ Backend RESTful API untuk manajemen master data Kurir/Courier. Dibangun mengguna
    ```
 
 3. **Install Dependencies & Pengaturan Environment**:
+   Jalankan perintah berikut di terminal proyek:
    ```bash
    composer install
    cp .env.example .env
@@ -31,7 +32,7 @@ Backend RESTful API untuk manajemen master data Kurir/Courier. Dibangun mengguna
    ```
 
 4. **Konfigurasi Database di `.env`**:
-   Buka file `.env` dan sesuaikan pengaturan koneksi database MySQL:
+   Buka file `.env` dan pastikan pengaturan koneksi database MySQL sudah sesuai:
    ```env
    DB_CONNECTION=mysql
    DB_HOST=127.0.0.1
@@ -41,18 +42,18 @@ Backend RESTful API untuk manajemen master data Kurir/Courier. Dibangun mengguna
    DB_PASSWORD=
    ```
 
-5. **Jalankan Migrasi Database**:
-   Jalankan migrasi untuk membuat tabel `couriers`:
+5. **Jalankan Migrasi & Seeder Database**:
+   Jalankan migrasi tabel sekaligus memasukkan 5 data master kurir (termasuk **Budiono Hadi Agung**):
    ```bash
-   php artisan migrate
+   php artisan migrate --seed
    ```
+   *(Atau jika sudah pernah migrasi sebelumnya, jalankan: `php artisan db:seed`)*.
 
 6. **Jalankan Development Server**:
    ```bash
    php artisan serve
    ```
-   API siap diakses pada: `http://127.0.0.1:8000/api/couriers`
-   _(Atau via virtual host Laragon jika aktif, contoh: `http://courier-gradin-test.test/api/couriers`)_.
+   Server aktif dan siap diakses pada: `http://127.0.0.1:8000`
 
 ---
 
@@ -74,7 +75,6 @@ php artisan test --filter=CourierApiTest
 ```
 
 ### Cakupan Skenario Test:
-
 - `test_index_paginated_and_sorted_by_name_by_default`: Memastikan paginasi dan urutan default berdasarkan nama kurir (ASC).
 - `test_index_sorted_by_name_return_all_five_couriers`: Memastikan seluruh data kurir berhasil diambil saat paginasi diperbesar.
 - `test_index_can_sort_by_registered_at`: Memastikan sorting dapat di-override menggunakan tanggal pendaftaran (`registered_at`).
@@ -89,265 +89,181 @@ php artisan test --filter=CourierApiTest
 
 ---
 
-## 4. Dokumentasi Endpoint API
+## 4. Cara Akses & Uji API di Browser (Address Bar)
 
-Base URL: `http://127.0.0.1:8000/api/couriers`
-
-Semua request dan response wajib menyertakan header:
-
-- `Accept: application/json`
-- `Content-Type: application/json`
+Karena endpoint API mengembalikan JSON secara otomatis, Anda bisa langsung mengetikkan URL berikut di address bar browser Anda (Chrome, Edge, Firefox, dll).
 
 ---
 
-### A. List Kurir (Index)
+### A. Lihat Semua Kurir (Index & Pagination)
+- **Ketik di URL Browser**:
+  ```text
+  http://127.0.0.1:8000/api/couriers
+  ```
+  *Secara default menampilkan data yang dipaginasi dan diurutkan berdasarkan nama kurir secara alfabetis (ASC).*
 
-Mengambil daftar kurir dengan fitur paginasi, pencarian multi-kata, filter level, dan pengurutan.
-
-- **Method**: `GET`
-- **URL**: `/api/couriers`
-- **Query Parameters**:
-  | Parameter | Tipe | Default | Keterangan |
-  |---|---|---|---|
-  | `per_page` | integer | `15` | Jumlah data per halaman (maksimal 100). |
-  | `page` | integer | `1` | Nomor halaman paginasi. |
-  | `sort` | string | `name` | Kolom pengurutan (`name` atau `registered_at`). |
-  | `direction` | string | `asc` | Arah pengurutan (`asc` atau `desc`). |
-  | `search` | string | - | Pencarian kurir. Mendukung multi-kata (contoh: `budi+agung` cocok dengan `Budiono Hadi Agung`). |
-  | `level` | string | - | Filter level (1-5), pisahkan dengan koma (contoh: `2,3`). |
-
-#### Contoh Request cURL:
-
-1. **Default (Paginasi 15 data & urut nama ASC)**:
-
-    ```bash
-    curl -X GET "http://127.0.0.1:8000/api/couriers" \
-      -H "Accept: application/json"
-    ```
-
-2. **Urutkan berdasarkan tanggal daftar terbaru (DESC)**:
-
-    ```bash
-    curl -X GET "http://127.0.0.1:8000/api/couriers?sort=registered_at&direction=desc" \
-      -H "Accept: application/json"
-    ```
-
-3. **Cari Kurir (`budi agung` mencocokkan `Budiono Hadi Agung`)**:
-
-    ```bash
-    curl -X GET "http://127.0.0.1:8000/api/couriers?search=budi+agung" \
-      -H "Accept: application/json"
-    ```
-
-4. **Filter hanya kurir dengan level 2 atau 3**:
-    ```bash
-    curl -X GET "http://127.0.0.1:8000/api/couriers?level=2,3" \
-      -H "Accept: application/json"
-    ```
-
-#### Contoh Response (200 OK):
-
-```json
-{
-    "current_page": 1,
-    "data": [
-        {
-            "id": 1,
-            "name": "Budiono Hadi Agung",
-            "phone": "081298745321",
-            "email": "budiono.hadiagung@gmail.com",
-            "level": 5,
-            "vehicle_type": "motor",
-            "vehicle_plate_number": "B 4821 XYZ",
-            "address": "Jl. Jend. Sudirman No. 12, Jakarta",
-            "status": "active",
-            "registered_at": "2024-05-12",
-            "created_at": "2026-09-14T04:00:00.000000Z",
-            "updated_at": "2026-09-14T04:00:00.000000Z"
-        }
-    ],
-    "first_page_url": "http://127.0.0.1:8000/api/couriers?page=1",
-    "from": 1,
-    "last_page": 1,
-    "last_page_url": "http://127.0.0.1:8000/api/couriers?page=1",
-    "next_page_url": null,
-    "path": "http://127.0.0.1:8000/api/couriers",
-    "per_page": 15,
-    "prev_page_url": null,
-    "to": 1,
-    "total": 1
-}
-```
+- **Contoh Response JSON (200 OK)**:
+  ```json
+  {
+      "current_page": 1,
+      "data": [
+          {
+              "id": 3,
+              "name": "Agus Santoso",
+              "phone": "082145987302",
+              "email": "agus.santoso77@yahoo.co.id",
+              "level": 3,
+              "vehicle_type": "mobil",
+              "vehicle_plate_number": "B 9821 ANB",
+              "address": "Jl. Pahlawan No. 45, Surabaya",
+              "status": "active",
+              "registered_at": "2024-11-19"
+          },
+          {
+              "id": 1,
+              "name": "Budiono Hadi Agung",
+              "phone": "081298745321",
+              "email": "budiono.hadiagung@gmail.com",
+              "level": 5,
+              "vehicle_type": "motor",
+              "vehicle_plate_number": "B 4821 XYZ",
+              "address": "Jl. Jend. Sudirman No. 12, Jakarta",
+              "status": "active",
+              "registered_at": "2024-05-12"
+          }
+      ],
+      "first_page_url": "http://127.0.0.1:8000/api/couriers?page=1",
+      "from": 1,
+      "last_page": 1,
+      "per_page": 15,
+      "total": 5
+  }
+  ```
 
 ---
 
-### B. Detail Kurir (Show)
-
-Mengembalikan semua informasi atribut dari satu kurir berdasarkan ID.
-
-- **Method**: `GET`
-- **URL**: `/api/couriers/{id}`
-
-#### Contoh cURL:
-
-```bash
-curl -X GET "http://127.0.0.1:8000/api/couriers/1" \
-  -H "Accept: application/json"
-```
-
-#### Contoh Response (200 OK):
-
-```json
-{
-    "id": 1,
-    "name": "Budiono Hadi Agung",
-    "phone": "081298745321",
-    "email": "budiono.hadiagung@gmail.com",
-    "level": 5,
-    "vehicle_type": "motor",
-    "vehicle_plate_number": "B 4821 XYZ",
-    "address": "Jl. Jend. Sudirman No. 12, Jakarta",
-    "status": "active",
-    "registered_at": "2024-05-12",
-    "created_at": "2026-09-14T04:00:00.000000Z",
-    "updated_at": "2026-09-14T04:00:00.000000Z"
-}
-```
+### B. Urutkan Berdasarkan Tanggal Pendaftaran
+- **Ketik di URL Browser**:
+  ```text
+  http://127.0.0.1:8000/api/couriers?sort=registered_at&direction=desc
+  ```
+  *Mengurutkan kurir dari yang paling baru didaftarkan.*
 
 ---
 
-### C. Tambah Kurir Baru (Store)
+### C. Cari Kurir (Multi-Kata Cocok dengan Budiono Hadi Agung)
+- **Ketik di URL Browser**:
+  ```text
+  http://127.0.0.1:8000/api/couriers?search=budi+agung
+  ```
+  *Pencarian multi-kata `budi agung` akan mencocokkan kurir bernama **Budiono Hadi Agung**.*
 
-Menambahkan data kurir baru ke sistem dengan validasi lengkap.
+---
 
+### D. Filter Level Tertentu Saja (Level 2 dan 3)
+- **Ketik di URL Browser**:
+  ```text
+  http://127.0.0.1:8000/api/couriers?level=2,3
+  ```
+  *Hanya menampilkan kurir dengan level 2 atau level 3.*
+
+---
+
+### E. Lihat Detail Kurir Berdasarkan ID (Show)
+- **Ketik di URL Browser**:
+  ```text
+  http://127.0.0.1:8000/api/couriers/1
+  ```
+  *Mengembalikan seluruh atribut data dari kurir ID 1 (Budiono Hadi Agung).*
+
+- **Contoh Response JSON (200 OK)**:
+  ```json
+  {
+      "id": 1,
+      "name": "Budiono Hadi Agung",
+      "phone": "081298745321",
+      "email": "budiono.hadiagung@gmail.com",
+      "level": 5,
+      "vehicle_type": "motor",
+      "vehicle_plate_number": "B 4821 XYZ",
+      "address": "Jl. Jend. Sudirman No. 12, Jakarta",
+      "status": "active",
+      "registered_at": "2024-05-12",
+      "created_at": "2026-09-14T04:00:00.000000Z",
+      "updated_at": "2026-09-14T04:00:00.000000Z"
+  }
+  ```
+
+---
+
+## 5. Pengujian Operasi Tambah, Ubah, & Hapus (API Client)
+
+Untuk operasi HTTP `POST`, `PUT`, dan `DELETE`, Anda dapat menggunakan tools seperti **Postman**, **Thunder Client** (ekstensi VS Code), atau **Insomnia**:
+
+### A. Tambah Kurir Baru (Store)
 - **Method**: `POST`
-- **URL**: `/api/couriers`
-- **Aturan Validasi**:
-    - `name`: required | string | max:255
-    - `phone`: required | string | max:20 | unique:couriers,phone
-    - `email`: nullable | email | max:255 | unique:couriers,email
-    - `level`: required | integer | between:1,5
-    - `vehicle_type`: nullable | string | max:50
-    - `vehicle_plate_number`: nullable | string | max:20
-    - `address`: nullable | string
-    - `status`: sometimes | string | in:active,inactive (default: active)
-    - `registered_at`: required | date (format: YYYY-MM-DD)
-
-#### Contoh cURL:
-
-```bash
-curl -X POST "http://127.0.0.1:8000/api/couriers" \
-  -H "Accept: application/json" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Budiono Hadi Agung",
-    "phone": "081298745321",
-    "email": "budiono.hadiagung@gmail.com",
-    "level": 5,
-    "vehicle_type": "motor",
-    "vehicle_plate_number": "B 4821 XYZ",
-    "address": "Jl. Jend. Sudirman No. 12, Jakarta",
-    "status": "active",
-    "registered_at": "2024-05-12"
-  }'
-```
-
-#### Contoh Response (201 Created):
-
-```json
-{
-    "id": 1,
-    "name": "Budiono Hadi Agung",
-    "phone": "081298745321",
-    "email": "budiono.hadiagung@gmail.com",
-    "level": 5,
-    "vehicle_type": "motor",
-    "vehicle_plate_number": "B 4821 XYZ",
-    "address": "Jl. Jend. Sudirman No. 12, Jakarta",
-    "status": "active",
-    "registered_at": "2024-05-12",
-    "created_at": "2026-09-14T04:00:00.000000Z",
-    "updated_at": "2026-09-14T04:00:00.000000Z"
-}
-```
+- **URL**: `http://127.0.0.1:8000/api/couriers`
+- **Headers**:
+  - `Accept: application/json`
+  - `Content-Type: application/json`
+- **Body (JSON)**:
+  ```json
+  {
+      "name": "Budi Santoso",
+      "phone": "081211223344",
+      "email": "budi.santoso@example.com",
+      "level": 3,
+      "vehicle_type": "motor",
+      "vehicle_plate_number": "B 1234 ABC",
+      "address": "Jl. Thamrin No. 10, Jakarta",
+      "status": "active",
+      "registered_at": "2026-09-14"
+  }
+  ```
+- **Response**: `201 Created`
 
 ---
 
-### D. Update Kurir (Update)
-
-Memperbarui sebagian atau seluruh data kurir. Menggunakan aturan `sometimes` sehingga hanya field yang dikirim yang divalidasi dan diperbarui. Pengecekan `unique` pada `phone` dan `email` secara otomatis mengabaikan ID kurir yang bersangkutan.
-
+### B. Update Kurir (Update)
 - **Method**: `PUT` atau `PATCH`
-- **URL**: `/api/couriers/{id}`
-
-#### Contoh cURL:
-
-```bash
-curl -X PUT "http://127.0.0.1:8000/api/couriers/1" \
-  -H "Accept: application/json" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "level": 4,
-    "vehicle_type": "mobil",
-    "vehicle_plate_number": "B 9999 KLA"
-  }'
-```
-
-#### Contoh Response (200 OK):
-
-```json
-{
-    "id": 1,
-    "name": "Budiono Hadi Agung",
-    "phone": "081298745321",
-    "email": "budiono.hadiagung@gmail.com",
-    "level": 4,
-    "vehicle_type": "mobil",
-    "vehicle_plate_number": "B 9999 KLA",
-    "address": "Jl. Jend. Sudirman No. 12, Jakarta",
-    "status": "active",
-    "registered_at": "2024-05-12",
-    "created_at": "2026-09-14T04:00:00.000000Z",
-    "updated_at": "2026-09-14T04:10:00.000000Z"
-}
-```
+- **URL**: `http://127.0.0.1:8000/api/couriers/1`
+- **Headers**:
+  - `Accept: application/json`
+  - `Content-Type: application/json`
+- **Body (JSON)** *(mendukung partial update)*:
+  ```json
+  {
+      "level": 4,
+      "vehicle_plate_number": "B 9999 XYZ"
+  }
+  ```
+- **Response**: `200 OK`
 
 ---
 
-### E. Hapus Kurir (Destroy)
-
-Menghapus rekaman data kurir dari database.
-
+### C. Hapus Kurir (Destroy)
 - **Method**: `DELETE`
-- **URL**: `/api/couriers/{id}`
-
-#### Contoh cURL:
-
-```bash
-curl -X DELETE "http://127.0.0.1:8000/api/couriers/1" \
-  -H "Accept: application/json"
-```
-
-#### Response:
-
-- **HTTP Status**: `204 No Content` (body kosong)
+- **URL**: `http://127.0.0.1:8000/api/couriers/1`
+- **Headers**:
+  - `Accept: application/json`
+- **Response**: `204 No Content` (body kosong)
 
 ---
 
-## 5. Struktur Skema Database (`couriers`)
+## 6. Struktur Skema Database (`couriers`)
 
 Tabel dibuat via migration `database/migrations/2026_09_14_034725_create_couriers_table.php`:
 
-| Kolom                       | Tipe                       | Keterangan                                                  |
-| --------------------------- | -------------------------- | ----------------------------------------------------------- |
-| `id`                        | BIGINT UNSIGNED            | Primary Key (Auto Increment)                                |
-| `name`                      | VARCHAR(255)               | Nama lengkap kurir (**Indexed**)                            |
-| `phone`                     | VARCHAR(20)                | Nomor telepon kurir (**Unique**)                            |
-| `email`                     | VARCHAR(255)               | Alamat email (**Nullable, Unique**)                         |
-| `level`                     | UNSIGNED TINYINT           | Level kurir 1 s/d 5 (**Indexed**)                           |
-| `vehicle_type`              | VARCHAR(50)                | Jenis kendaraan, misal: motor, mobil, pickup (**Nullable**) |
-| `vehicle_plate_number`      | VARCHAR(20)                | Nomor plat kendaraan (**Nullable**)                         |
-| `address`                   | TEXT                       | Alamat tempat tinggal (**Nullable**)                        |
-| `status`                    | ENUM('active', 'inactive') | Status kurir (Default: `'active'`)                          |
-| `registered_at`             | DATE                       | Tanggal terdaftar (**Indexed**)                             |
-| `created_at` / `updated_at` | TIMESTAMP                  | Timestamp standar Eloquent                                  |
+| Kolom | Tipe | Keterangan |
+|---|---|---|
+| `id` | BIGINT UNSIGNED | Primary Key (Auto Increment) |
+| `name` | VARCHAR(255) | Nama lengkap kurir (**Indexed**) |
+| `phone` | VARCHAR(20) | Nomor telepon kurir (**Unique**) |
+| `email` | VARCHAR(255) | Alamat email (**Nullable, Unique**) |
+| `level` | UNSIGNED TINYINT | Level kurir 1 s/d 5 (**Indexed**) |
+| `vehicle_type` | VARCHAR(50) | Jenis kendaraan: motor, mobil, pickup (**Nullable**) |
+| `vehicle_plate_number` | VARCHAR(20) | Nomor plat kendaraan (**Nullable**) |
+| `address` | TEXT | Alamat tempat tinggal (**Nullable**) |
+| `status` | ENUM('active', 'inactive') | Status kurir (Default: `'active'`) |
+| `registered_at` | DATE | Tanggal terdaftar (**Indexed**) |
+| `created_at` / `updated_at` | TIMESTAMP | Timestamp standar Eloquent |
